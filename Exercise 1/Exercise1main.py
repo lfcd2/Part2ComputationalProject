@@ -125,10 +125,13 @@ def count_degeneracies(eigenvals):
 
 
 if __name__ == "__main__":
-    while True:
-        molecule = get_type()
-        size = get_input() if molecule in ['cyclic', 'linear'] else 1
-        print('')
-        master_matrix = create_huckel_matrix(size, mode=molecule)
-        evals = list(get_evals(master_matrix))
-        count_degeneracies(evals)
+    try:
+        while True:
+            molecule = get_type()
+            size = get_input() if molecule in ['cyclic', 'linear'] else 1
+            print('')
+            master_matrix = create_huckel_matrix(size, mode=molecule)
+            evals = list(get_evals(master_matrix))
+            count_degeneracies(evals)
+    except KeyboardInterrupt:
+        print("\nRUNTIME TERMINATED SUCCESSFULLY")
