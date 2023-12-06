@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-
+# Rate constants (global)
 k1 = 1.34
 k2 = 1.6e9
 k3 = 8e3
@@ -15,34 +15,27 @@ def create_arrays(length, timestep):
     X = np.zeros(np.shape(time_array))
     Y = np.zeros(np.shape(time_array))
     Z = np.zeros(np.shape(time_array))
-    A = np.zeros(np.shape(time_array))
-    B = np.zeros(np.shape(time_array))
     X[0] = 10 ** (-9.8)
     Y[0] = 10 ** (-6.52)
     Z[0] = 10 ** (-7.32)
-    A[0] = 0.06
-    B[0] = 0.06
-    return time_array, X, Y, Z, A, B
+    return time_array, X, Y, Z
 
 
-def compute_step(X, Y, Z, A, B, timestep, i):
-    x, y, z, a, b = X[i], Y[i], Z[i], A[i], B[i]  # 0.06, 0.06  # Concentration of A and B is much greater than X,Y,Z so steady state
+def compute_step(x_array, y_array, z_array, timestep, i):
+    x, y, z = x_array[i], y_array[i], z_array[i]
+    a, b = 0.06, 0.06  # Concentration of A and B is much greater than X,Y,Z so steady state
 
-    X[i+1] = x + timestep * (k1*a*y - k2*x*y + k3*b*x - 2*k4*x*x)
-    Y[i+1] = y + timestep * (-k1*a*y - k2*x*y + k5*z)
-    Z[i+1] = z + timestep * (k3*b*x - k5*z)
-    # A[i+1] = a + timestep * (-k1*a*y)
-    # B[i+1] = b + timestep * (-k3*b*x)
-
-    return X, Y, Z, A, B
+    x_array[i + 1] = x + timestep * (k1 * a * y - k2 * x * y + k3 * b * x - 2 * k4 * x * x)
+    y_array[i + 1] = y + timestep * (-k1 * a * y - k2 * x * y + k5 * z)
+    z_array[i + 1] = z + timestep * (k3 * b * x - k5 * z)
 
 
-def plot_graph(time, X, Y, Z, length):
+def plot_graph(time, x_array, y_array, z_array, length):
     fig, ax = plt.subplots()
     ax.set_yscale('log')
-    ax.plot(time, X, color='blue', label='X')
-    ax.plot(time, Y, color='green', label='Y')
-    ax.plot(time, Z, color='red', label='Z')
+    ax.plot(time, x_array, color='blue', label='X')
+    ax.plot(time, y_array, color='green', label='Y')
+    ax.plot(time, z_array, color='red', label='Z')
     ax.legend()
     plt.title('Plot of Concentration against time for the Oregonator reaction')
     ax.set_xlabel('Time / s')
@@ -52,11 +45,11 @@ def plot_graph(time, X, Y, Z, length):
 
 
 def run():
-    length = 90
+    length = 1
     timestep = 1e-6
-    time, X, Y, Z, A, B = create_arrays(length, timestep)
+    time, X, Y, Z = create_arrays(length, timestep)
     for i in tqdm(range(int(length/timestep)-1)):
-        X, Y, Z, A, B = compute_step(X, Y, Z, A, B, timestep, i)
+        compute_step(X, Y, Z, timestep, i)
     plot_graph(time, X, Y, Z, length)
 
 
