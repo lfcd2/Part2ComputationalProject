@@ -23,3 +23,4 @@ plt.xlim(0, 8)
 plt.ylim(-0.01, 1.01)
 plt.savefig('Part1Output.png', dpi=300)
 plt.show()
+

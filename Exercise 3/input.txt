@@ -1,0 +1,19 @@
+# Reactions, given in the format {reagent 1}+{reagent 2}}>{product 1}+{product 2}_{rate constant}
+A>B_1
+2B>B+C_1
+C+B>A+B_1
+
+# Initial conditions, must be given as the reagent:concentration. concentration in M, as a float
+A:1
+B:3
+C:1
+
+
+# Setup
+# Duration is how long the reaction will be simulated for. float in seconds
+# Timestep is the size of delta T in the integration
+# Plot is the list of vars to plot
+
+Duration:10
+Timestep:1e-3
+Plot:A,B,C
