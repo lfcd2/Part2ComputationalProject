@@ -70,7 +70,7 @@ class Cell:
             self.state[target_species][i + 1] = current_values[target_species] + self.timestep * dTargetSpecies_dt
 
 
-def plot_graph(time, state_dict, to_plot):
+def plot_graph(time, state_dict, to_plot, log):
     """
     Plot the graph of reagents
     :param ndarray time: x-axis
@@ -87,6 +87,8 @@ def plot_graph(time, state_dict, to_plot):
     plt.title('Plot of Concentration against time')
     ax.set_xlabel('Time / s')
     ax.set_ylabel('Concentration / M')
+    if log:
+        ax.set_yscale('log')
     plt.show()
 
 
@@ -94,7 +96,8 @@ def parse_input_file(input_file):
     """
     Parse the input file to get reactions, starting conditions, duration, timestep
     :param str input_file: location of input file
-    :return: list reactions, dict starting conditions, float duration, float timestep, list unique, list to_plot
+    :return: list reactions, dict starting conditions, float duration,
+             float timestep, list unique, list to_plot, bool log
     """
 
     reactions = []
@@ -106,8 +109,8 @@ def parse_input_file(input_file):
             line = line.rstrip()
             if line == '' or line[0] == '#':
                 pass
-            elif '_' in line:
-                reaction_species, reaction_rate = line.split('_')
+            elif '/' in line:
+                reaction_species, reaction_rate = line.split('/')
                 if '>' not in reaction_species:
                     raise Exception('Invalid Reaction')
                 try:
@@ -129,6 +132,8 @@ def parse_input_file(input_file):
                     raise Exception('Invalid Duration')
             elif 'Plot:' in line:
                 to_plot = line.split(':')[1].split(',')
+            elif 'Logarithmic:' in line:
+                log = bool(line.split(':')[1])
             elif ':' in line:
                 species, concentration = line.split(':')
                 start_conditions[species] = float(concentration)
@@ -140,7 +145,7 @@ def parse_input_file(input_file):
     for s in to_plot:
         if s not in unique:
             raise Exception('Plotting variable not in reactions')
-    return reactions, start_conditions, duration, timestep, unique, to_plot
+    return reactions, start_conditions, duration, timestep, unique, to_plot, log
 
 
 def parse_species(species):
@@ -161,14 +166,14 @@ def parse_species(species):
 def run():
     """Run the program"""
 
-    reactions, start_conditions, duration, timestep, all_unique_species,  to_plot = parse_input_file('input.txt')
+    reactions, start_conditions, duration, timestep, all_unique_species,  to_plot, log = parse_input_file('input.txt')
 
     cell = Cell(duration, timestep, all_unique_species, start_conditions)
 
     for i in tqdm(range(int(duration / timestep) - 1)):
         cell.iterate(i, reactions)
 
-    plot_graph(cell.time, cell.state, to_plot)
+    plot_graph(cell.time, cell.state, to_plot, log)
 
 
 if __name__ == '__main__':
