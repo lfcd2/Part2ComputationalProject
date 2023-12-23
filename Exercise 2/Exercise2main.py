@@ -1,6 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import cm
 
 
 def get_file_data(link):
@@ -72,7 +73,7 @@ def plot_3d(ax, sorted_array, equilibrium, element):
     Z = np.asarray(energies).reshape((len(x), len(y))).transpose()
 
     # plot the surface and make them pretty
-    ax.plot_surface(X, Y, Z, zorder=0)
+    ax.plot_surface(X, Y, Z, zorder=0, cmap=cm.plasma)
     ax.scatter(*equilibrium, color='red', alpha=0.5, zorder=1, lw=0, label='Equilibrium Geometry')
     ax.set_xlabel('Stretch Distance (Å)')
     ax.set_ylabel('Bond Angle (º)')
@@ -110,13 +111,13 @@ def calculate_freq(sorted_values, equilibrium):
     v1 = np.sqrt(k_r / mu_1) / (2 * np.pi)
     v2 = np.sqrt(k_theta / (mu_2 * (eq_r ** 2))) / (2 * np.pi)
 
-    #v1 = v1 * 5.03e22
-    #v2 = v2 * 5.03e22
+    #  v1 = v1 * 5.03e22
+    #  v2 = v2 * 5.03e22
     return v1, v2
 
 
 def run():
-    for url in ['./H2Ooutfiles']:#, './H2Soutfiles']:
+    for url in ['./H2Ooutfiles', './H2Soutfiles']:
 
         # cache data to prevent re-parsing
         cache_file = f'{url[2:5]}temp'
