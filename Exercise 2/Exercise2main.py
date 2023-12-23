@@ -73,7 +73,7 @@ def plot_3d(ax, sorted_array, equilibrium, element):
     Z = np.asarray(energies).reshape((len(x), len(y))).transpose()
 
     # plot the surface and make them pretty
-    ax.plot_surface(X, Y, Z, zorder=0, cmap=cm.plasma)
+    ax.plot_surface(X, Y, Z, zorder=0, cmap=cm.plasma, edgecolor='black', linewidth=0.1)
     ax.scatter(*equilibrium, color='red', alpha=0.5, zorder=1, lw=0, label='Equilibrium Geometry')
     ax.set_xlabel('Stretch Distance (Å)')
     ax.set_ylabel('Bond Angle (º)')
