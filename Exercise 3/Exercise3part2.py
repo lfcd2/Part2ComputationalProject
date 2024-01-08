@@ -2,6 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.animation as anim
 # from mpl_toolkits.mplot3d import Axes3D
 from scipy import signal
 
@@ -12,6 +13,7 @@ class Cell:
         self.position = position
         self.duration = duration
         self.timestep = timestep
+        self.neighbours = []
         self.time = np.arange(0, self.duration, self.timestep)
         X = np.zeros(np.shape(self.time))
         Y = np.zeros(np.shape(self.time))
@@ -23,6 +25,21 @@ class Cell:
         self.x_array = X
         self.y_array = Y
         self.z_array = Z
+
+    def setup_neighbours(self, cell_array, source_pos, grid_size):
+        pos = self.position
+        # left
+        if pos[0] <= source_pos[0] and pos[0] != 0:
+            self.neighbours.append(cell_array[pos[0] - 1, pos[1]])
+        # right
+        if pos[0] >= source_pos[0] and pos[0] != grid_size-1:
+            self.neighbours.append(cell_array[pos[0] + 1, pos[1]])
+        # up
+        if pos[1] <= source_pos[1] and pos[1] != 0:
+            self.neighbours.append(cell_array[pos[0], pos[1] - 1])
+        # down
+        if pos[1] >= source_pos[1] and pos[1] != grid_size-1:
+            self.neighbours.append(cell_array[pos[0], pos[1] + 1])
 
     def reactions(self, i):
         k1 = 1.34
@@ -36,6 +53,30 @@ class Cell:
         self.x_array[i + 1] = x + self.timestep * (k1 * a * y - k2 * x * y + k3 * b * x - 2 * k4 * x * x)
         self.y_array[i + 1] = y + self.timestep * (-k1 * a * y - k2 * x * y + k5 * z)
         self.z_array[i + 1] = z + self.timestep * (k3 * b * x - k5 * z)
+
+    def diffusion(self, i):
+        num_of_neighbours = len(self.neighbours)
+
+        #if i == 100000:
+         #   print(self.neighbours, self.position)
+
+
+        cell_x = self.x_array[i + 1]
+        delta_x = cell_x * 1e-15
+        cell_y = self.y_array[i + 1]
+        delta_y = cell_y * 1e-15
+        cell_z = self.z_array[i + 1]
+        delta_z = cell_z * 1e-15
+
+        self.x_array[i + 1] = cell_x - delta_x
+        self.y_array[i + 1] = cell_y - delta_y
+        self.z_array[i + 1] = cell_z - delta_z
+
+        for n in self.neighbours:
+            n.x_array[i + 1] += delta_x / num_of_neighbours
+            n.y_array[i + 1] += delta_y / num_of_neighbours
+            n.z_array[i + 1] += delta_z / num_of_neighbours
+
 
 
 def plot_graph(time, x_array, y_array, z_array, cell_number):
@@ -52,86 +93,68 @@ def plot_graph(time, x_array, y_array, z_array, cell_number):
     ax.set_ylim(2e-11, 0.002)
 
 
-def diffuse(cells, i, timestep):
-    s = 0.05 * timestep  # D * dt/dv^2    dt = timestep, dv^2 =1, D = 0.05
-    temp_storage = []
-    for pos, cell in enumerate(cells):
+def make_animation(cells, timestep, duration, animation_timestep, gridsize, slow):
+    fig, (ax, cbar) = plt.subplots(1, 2, width_ratios=([7, 1]))
+    norm = mpl.colors.LogNorm(vmin=1e-18, vmax=1e-3)
 
-        if pos == 0:
-            pass
-            x = s * (cells[1].x_array[i] - cell.x_array[i])
-            y = s * (cells[1].y_array[i] - cell.y_array[i])
-            z = s * (cells[1].z_array[i] - cell.z_array[i])
-        elif pos == len(cells)-1:
-            x = s * (cells[-2].x_array[i] - cell.x_array[i])
-            y = s * (cells[-2].y_array[i] - cell.y_array[i])
-            z = s * (cells[-2].z_array[i] - cell.z_array[i])
-        else:
-            x = s * (cells[pos-1].x_array[i] - 2*cell.x_array[i] + cells[pos+1].x_array[i])
-            y = s * (cells[pos-1].y_array[i] - 2*cell.y_array[i] + cells[pos+1].y_array[i])
-            z = s * (cells[pos-1].z_array[i] - 2*cell.z_array[i] + cells[pos+1].z_array[i])
-        temp_storage.append((x, y, z))
-    for pos, cell in enumerate(cells):
-        cell.x_array[i] += temp_storage[pos][0]
-        cell.y_array[i] += temp_storage[pos][1]
-        cell.z_array[i] += temp_storage[pos][2]
+    def anim_func(frame):
+        i = int(frame * (animation_timestep/timestep))
+        data = [[c.z_array[i] for c in cell_row] for cell_row in cells] # np.where(c.x_array[i] < 1e-18, 1e-18, c.x_array[i])
+        ax.pcolor(data, norm=norm)
 
+    plt.colorbar(mappable=mpl.cm.ScalarMappable(norm=norm), cax=cbar)
 
-def intensity_plot(cells, timestep):
-
-    xs, ys, zs = [], [], []
-    for c in cells:
-        xtemp = np.where(c.x_array < 1e-11, 1e-11, c.x_array)
-        ytemp = np.where(c.y_array < 1e-11, 1e-11, c.y_array)
-        ztemp = np.where(c.z_array < 1e-11, 1e-11, c.z_array)
-        while len(xtemp) > 2**23:
-            xtemp = signal.resample(xtemp, int(len(xtemp) / 2))
-            ytemp = signal.resample(ytemp, int(len(ytemp) / 2))
-            ztemp = signal.resample(ztemp, int(len(ztemp) / 2))
-        xs.append(xtemp)
-        ys.append(ytemp)
-        zs.append(ztemp)
-
-    fig, axs = plt.subplots(ncols=3, figsize=(15, 5))
-    titles = ['X', 'Y', 'Z']
-    my_plot = None
-    for i, data in enumerate([xs, ys, zs]):
-        ax = axs[i]
-        my_plot = ax.imshow(data, interpolation='none', aspect='auto', norm=mpl.colors.LogNorm(vmin=1e-11, vmax=1e-3))
-        ax.set_xlabel('Time / s')
-        ax.set_ylabel('Cell')
-        ax.set_title(f'Concentrations of {titles[i]}')
-        y_ints = range(len(data))
-        ax.set_yticks(y_ints)
-        ax.set_ylim(0.5, len(data)-0.5)
-        ticks = ax.get_xticks()
-        ax.set_xticks(ticks, labels=np.round(ticks*timestep, 2))
-        ax.set_xlim(0, len(data[0]))
-    fig.colorbar(mappable=my_plot, label='Concentration / M')
+    ax.set_title(f'Concentration of Z. Slowed by a factor of {slow}.')
+    cbar.set_ylabel(fr'Concentration / mol dm$^-3$')
+    fig.tight_layout()
+    animation = anim.FuncAnimation(fig, anim_func, interval=animation_timestep*1000*slow,
+                                   frames=(int(duration / animation_timestep))+1)
+    animation.save('Part2BOutput.mp4')
 
 
 def run():
-    duration = float(input('Duration of simulation: '))
-    timestep = 1e-6
-    number_of_cells = int(input('number of cells (type 1 for part A): '))+1
-    cell_list = []
-    for position in range(number_of_cells):
-        full = True if position == 0 else False
-        new_cell = Cell(position, duration, timestep, full, number_of_cells)
-        cell_list.append(new_cell)
+    inp = input('Part A or B:')
+    if inp.upper() == 'A':
+        duration = float(input('Duration of simulation: '))
+        timestep = 1e-6
 
-    if number_of_cells == 2:  # PART A
-        cell = cell_list[0]
+        # PART A
+        cell = Cell(0, duration, timestep, True, 1)
         for i in tqdm(range(int(duration / timestep) - 1)):
             cell.reactions(i)
         plot_graph(cell.time, cell.x_array, cell.y_array, cell.z_array, 0)
+        plt.show()
+    else:
+        run_b()
 
-    else:  # PART B
-        for i in tqdm(range(int(duration/timestep)-1)):
-            for cell in cell_list:
-                cell.reactions(i)
-            diffuse(cell_list, i+1, timestep)
-        intensity_plot(cell_list, timestep)
+
+def run_b():
+    duration = 2.5
+    timestep = 1e-6
+    animation_timestep = 0.001
+    gridsize = 9
+    source_position = (4, 4)
+    slowfactor = 25
+    cell_list = np.empty((gridsize, gridsize), dtype=Cell)
+
+    for i in range(gridsize):
+        for j in range(gridsize):
+            position = (i, j)
+            full = True if position == source_position else False
+            new_cell = Cell(position, duration, timestep, full)
+            cell_list[i, j] = new_cell
+
+    for y, x in np.ndindex(gridsize, gridsize):
+        cell_list[x, y].setup_neighbours(cell_list, source_position, gridsize)
+
+    for i in tqdm(range(int(duration/timestep)-1)):
+        for y, x in np.ndindex(gridsize, gridsize):
+            cell_list[x, y].reactions(i)
+        for y, x in np.ndindex(gridsize, gridsize):
+            cell_list[x, y].diffusion(i)
+
+    make_animation(cell_list, timestep, duration, animation_timestep, gridsize, slowfactor)
+
     plt.show()
 
 
