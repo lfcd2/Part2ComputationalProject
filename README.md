@@ -6,7 +6,7 @@
 - [Exercise 4](https://github.com/lfcd2/Part2ComputationalProject/tree/main/Exercise%204)
 
 All code written in **Python 3.9**\
-With thanks to Will Townes for his [buckyminsterfullerene adjacency matrix](https://github.com/willtownes/python/blob/master/bucky.py)
+With thanks to Will Townes for his [buckminsterfullerene adjacency matrix](https://github.com/willtownes/python/blob/master/bucky.py)
 ##### Louis De Neve
 ##### lfcd2@cam.ac.uk
 
