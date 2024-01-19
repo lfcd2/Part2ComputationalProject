@@ -1,0 +1,1 @@
+The folders containing H2Ooutfiles and H2Soutfiles should be located in the same directory as the py file

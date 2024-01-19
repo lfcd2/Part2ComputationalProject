@@ -4,76 +4,86 @@ import numpy as np
 from matplotlib import cm
 
 
-def get_file_data(link):
-    filelist = os.listdir(link)
-    radii, angles, values = [], [], []
+def get_file_data(link) -> list[tuple[float, float, float]]:
+    """
+    Iterates over each file, extracting file data and saving as a list of tuples
+    :param str link: string directing to the folder of files to be extracted
+    :return list[tuple[float, float, float]] all_data: all the data in list of tuple form
+    """
 
-    for file_name in filelist:
+    file_list = os.listdir(link)
+    all_data = []
+    for file_name in file_list:
 
-        # extracts radii and angle
         radius = float(file_name.split('r')[1].split('theta')[0])
         angle = float(file_name.split('theta')[1].split('.out')[0])
-        radii.append(radius)
-        angles.append(angle)
 
-        # finds the correct line and extract the value (val)
         with open(f'{link}/{file_name}', 'r') as f:
             data = f.readlines()
             for line in data:
                 if ' SCF Done' == line[:9]:
                     val = float(line.split('E(RHF) =  ')[1].split('     A.U.')[0])
-                    values.append(val)
-                    print(f'H2{link[4]}: Stretch = {radius} Å, Bond Angle = {angle}º, Energy = {round(val, 7)} Hartree')
+                    break
 
-    return radii, angles, values
+        all_data.append((radius, angle, val))
 
-
-def sort_data(data):
-    # sorts the list of data points by angles to fix os bugs (it puts 100-160 before 70-99)
-    list_of_data_points = list(zip(*data))
-    list_of_data_points.sort(key=lambda a: a[1])
-
-    # sorting by angles merged the radii entries, so this sorts them back out
-    master_list = []
-    for unique_radius in np.unique(data[0]):
-        rlist = []
-        for entry in list_of_data_points:
-            if entry[0] == unique_radius:
-                rlist.append(entry)
-        master_list += rlist
-
-    # read equilibrium geometry
-    equilibrium = min(master_list, key=lambda a: a[2])
-
-    # unzips the list from tuples
-    sorted_list = list(zip(*master_list))
-
-    return sorted_list, equilibrium
+    return all_data
 
 
-def create_and_scale_axes(data):
+def construct_xyz(data) -> tuple:
+    """
+    Constructs x, y, z arrays from the list of tuples
+    :param list[tuple[float, float, float]] data: data from get_file_data
+    :return list, tuple: list of x, y, z arrays and tuple of equilibrium coordinates
+    """
+
+    unique_radii = sorted(np.unique([a[0] for a in data]))
+    unique_angles = sorted(np.unique([b[1] for b in data]))
+
+    mesh = np.ndarray((len(unique_radii), len(unique_angles)))
+
+    for entry in data:
+        i = unique_radii.index(entry[0])
+        j = unique_angles.index(entry[1])
+        mesh[i, j] = entry[2]
+
+    xmin_index, ymin_index = np.unravel_index(np.argmin(mesh), np.shape(mesh))
+    equilibrium = (unique_radii[xmin_index], unique_angles[ymin_index], mesh[xmin_index, ymin_index])
+
+    return (unique_radii, unique_angles, mesh), equilibrium
+
+
+def create_and_scale_axes(xyz_data) -> tuple[plt.figure, plt.axes]:
+    """
+    Creates a figure and axes and scales it to the size of the plot
+    :param list[tuple[float, float, float]] xyz_data: data from construct_xyz
+    :return tuple[plt.figure, plt.axes] (fig, axs): The figure and axes
+    """
+
+    x, y, z = xyz_data
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d', computed_zorder=False)
-    ax.set_xlim3d(min(data[0]), max(data[0]))
-    ax.set_ylim3d(min(data[1]), max(data[1]))
-    ax.set_zlim3d(min(data[2]), max(data[2]))
+    ax.set_xlim3d(np.min(x), np.max(x))
+    ax.set_ylim3d(np.min(y), np.max(y))
+    ax.set_zlim3d(np.min(z), np.max(z))
 
     return fig, ax
 
 
-def plot_3d(ax, sorted_array, equilibrium, element):
-    radii, angles, energies = sorted_array
+def plot_3d(xyz_data, equilibrium, element) -> None:
+    """
+    Plots the graphs
+    :param list xyz_data: data from construct_xyz
+    :param tuple equilibrium: coordinates of equilibrium position
+    :param str element: which element's dihydride is being plotted (H2A)
+    :return: None
+    """
 
-    # creates a matrix grid of the correct size for ax.plot_surface
-    x = np.unique(radii)
-    y = np.unique(angles)
-    X, Y = np.meshgrid(x, y)
+    X, Y, Z = xyz_data
+    X, Y = np.meshgrid(X, Y)
+    fig, ax = create_and_scale_axes((X, Y, Z))
 
-    # reshape the energy values into the same shape as the XY grid
-    Z = np.asarray(energies).reshape((len(x), len(y))).transpose()
-
-    # plot the surface and make them pretty
-    ax.plot_surface(X, Y, Z, zorder=0, cmap=cm.plasma, edgecolor='black', linewidth=0.1)
+    ax.plot_surface(X, Y, Z.T, zorder=0, cmap=cm.plasma, edgecolor='black', linewidth=0.1)
     ax.scatter(*equilibrium, color='red', alpha=0.5, zorder=1, lw=0, label='Equilibrium Geometry')
     ax.set_xlabel('Stretch Distance (Å)')
     ax.set_ylabel('Bond Angle (º)')
@@ -83,6 +93,7 @@ def plot_3d(ax, sorted_array, equilibrium, element):
 
 
 def calculate_freq(sorted_values, equilibrium):
+    # TODO fix + docstring
     radii, angles, energies = sorted_values
     relative_radii = [(radius-equilibrium[0])*1e-10 for radius in radii]  # in m
     relative_angles = [(angle-equilibrium[1])*(np.pi/180) for angle in angles]  # in radians
@@ -116,29 +127,22 @@ def calculate_freq(sorted_values, equilibrium):
     return v1, v2
 
 
-def run():
+def run_ex2() -> None:
+    """
+    Run Exercise 2
+    :return: None
+    """
+
     for url in ['./H2Ooutfiles', './H2Soutfiles']:
 
-        # cache data to prevent re-parsing
-        cache_file = f'{url[2:5]}temp'
-        if os.path.exists(f'{cache_file}.npy'):
-            data = np.load(f'{cache_file}.npy')
-        else:
-            data = get_file_data(url)
-            np.save(cache_file, data)
+        data = get_file_data(url)
 
-        # sort data to fix issues with os imports
-        sorted_array, equilibrium = sort_data(data)
+        xyz, equilibrium = construct_xyz(data)
 
-        v1, v2 = calculate_freq(sorted_array, equilibrium)
-        print(v1, v2)
-
-        # create axes and plot
-        fig, ax = create_and_scale_axes(sorted_array)
-        plot_3d(ax, sorted_array, equilibrium, url[4])
+        plot_3d(xyz, equilibrium, url[4])
 
     plt.show()
 
 
 if __name__ == '__main__':
-    run()
+    run_ex2()
