@@ -56,7 +56,7 @@ def construct_xyz(data) -> tuple:
 def create_and_scale_axes(xyz_data) -> tuple[plt.figure, plt.axes]:
     """
     Creates a figure and axes and scales it to the size of the plot
-    :param list[tuple[float, float, float]] xyz_data: data from construct_xyz
+    :param tuple[Any, Any, Any] xyz_data: data from construct_xyz
     :return tuple[plt.figure, plt.axes] (fig, axs): The figure and axes
     """
 
@@ -92,39 +92,49 @@ def plot_3d(xyz_data, equilibrium, element) -> None:
     ax.legend(loc=(0.75, 1))
 
 
-def calculate_freq(sorted_values, equilibrium):
-    # TODO fix + docstring
-    radii, angles, energies = sorted_values
-    relative_radii = [(radius-equilibrium[0])*1e-10 for radius in radii]  # in m
-    relative_angles = [(angle-equilibrium[1])*(np.pi/180) for angle in angles]  # in radians
-    relative_energies = [energy*4.3597e-18 for energy in energies]  # in joules
-    tuple_list = list(zip(relative_radii, relative_angles, relative_energies))
+def calculate_freq(xyz, equilibrium, element) -> None:
+    """
+    Prints the stretching frequencies
+    :param list xyz: radius, angle and energy arrays
+    :param tuple equilibrium: equilibrium coordinates
+    :param str element: which element's dihydride is being plotted (H2A)
+    :return: None
+    """
+    r, t, e = xyz
 
-    # construct list of energies with constant radius (and close to equilibrium angle)
-    eq_radii = [coords for coords in tuple_list if coords[0] == 0 and abs(coords[1]) < 0.4]
-    const_radii, var_angles, var_energies = list(zip(*eq_radii))
-    print(np.polyfit(var_angles, var_energies, 2))
-    k_theta = np.polyfit(var_angles, var_energies, 2)[0]*2
+    const_r = e[r.index(equilibrium[0]), :]
+    const_t = e[:, t.index(equilibrium[1])]
 
-    # construct list of energies with constant angle (and close to equilibrium radius)
-    eq_angle = [coords for coords in tuple_list if coords[1] == 0 and abs(coords[0]) < 0.2e-10]
-    var_radii, const_angle, var_energies = list(zip(*eq_angle))
-    print(np.polyfit(var_radii, var_energies, 2))
-    k_r = np.polyfit(var_radii, var_energies, 2)[0]*2
+    ri = r.index(equilibrium[0])
+    ti = t.index(equilibrium[1])
+
+    r = [a * 1e-10 for a in r]  # convert radii to m
+    t = [a * (np.pi / 180) for a in t]  # convert angles to radians
+    const_t = [a * 4.35974e-18 for a in const_t]  # convert energy to joules
+    const_r = [a * 4.35974e-18 for a in const_r]
+
+    kt = 2*np.polyfit(t[ti-1:ti+3], const_r[ti-1:ti+3], 2)[0]
+    kr = 2*np.polyfit(r[ri-1:ri+3], const_t[ri-1:ri+3], 2)[0]
 
     m_u = 1.66e-27
     mu_1 = 2 * m_u
     mu_2 = 0.5 * m_u
-    eq_r = equilibrium[0] * 1e-10  # TODO workout scalefactors?
 
-    print(k_theta, ",", k_r, ",", k_r/k_theta)
+    eq_r = equilibrium[0] * 1e-10
 
-    v1 = np.sqrt(k_r / mu_1) / (2 * np.pi)
-    v2 = np.sqrt(k_theta / (mu_2 * (eq_r ** 2))) / (2 * np.pi)
+    v1 = np.sqrt(kr / mu_1) / (2 * np.pi)
+    v2 = np.sqrt(kt / (mu_2 * (eq_r * eq_r))) / (2 * np.pi)
 
-    #  v1 = v1 * 5.03e22
-    #  v2 = v2 * 5.03e22
-    return v1, v2
+    v1 = v1 * 3.33565e-11
+    v2 = v2 * 3.33565e-11
+    print(f'''==================================================
+For H2{element}, the following data was calculated:
+Equilibrium bond length: {equilibrium[0]} Å
+Equilibrium bond angle: {equilibrium[1]}°
+Equilibrium bond energy: {-equilibrium[2].round(1)} Hartree
+Symmetric stretching frequency: {v1.round()} cm-1
+Bending stretching frequency: {v2.round()} cm-1
+==================================================''')
 
 
 def run_ex2() -> None:
@@ -138,6 +148,8 @@ def run_ex2() -> None:
         data = get_file_data(url)
 
         xyz, equilibrium = construct_xyz(data)
+
+        calculate_freq(xyz, equilibrium, url[4])
 
         plot_3d(xyz, equilibrium, url[4])
 
