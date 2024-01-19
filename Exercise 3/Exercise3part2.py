@@ -3,8 +3,6 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.animation as anim
-# from mpl_toolkits.mplot3d import Axes3D
-from scipy import signal
 
 
 class Cell:
@@ -57,10 +55,6 @@ class Cell:
     def diffusion(self, i):
         num_of_neighbours = len(self.neighbours)
 
-        #if i == 100000:
-         #   print(self.neighbours, self.position)
-
-
         cell_x = self.x_array[i + 1]
         delta_x = cell_x * 1e-15
         cell_y = self.y_array[i + 1]
@@ -76,7 +70,6 @@ class Cell:
             n.x_array[i + 1] += delta_x / num_of_neighbours
             n.y_array[i + 1] += delta_y / num_of_neighbours
             n.z_array[i + 1] += delta_z / num_of_neighbours
-
 
 
 def plot_graph(time, x_array, y_array, z_array, cell_number):
@@ -99,7 +92,7 @@ def make_animation(cells, timestep, duration, animation_timestep, gridsize, slow
 
     def anim_func(frame):
         i = int(frame * (animation_timestep/timestep))
-        data = [[c.z_array[i] for c in cell_row] for cell_row in cells] # np.where(c.x_array[i] < 1e-18, 1e-18, c.x_array[i])
+        data = [[c.z_array[i] for c in cell_row] for cell_row in cells]
         ax.pcolor(data, norm=norm)
 
     plt.colorbar(mappable=mpl.cm.ScalarMappable(norm=norm), cax=cbar)
