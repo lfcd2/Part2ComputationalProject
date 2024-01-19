@@ -131,7 +131,7 @@ def calculate_freq(xyz, equilibrium, element) -> None:
 For H2{element}, the following data was calculated:
 Equilibrium bond length: {equilibrium[0]} Å
 Equilibrium bond angle: {equilibrium[1]}°
-Equilibrium bond energy: {-equilibrium[2].round(1)} Hartree
+Equilibrium bond energy: {equilibrium[2].round(1)} Hartree
 Symmetric stretching frequency: {v1.round()} cm-1
 Bending stretching frequency: {v2.round()} cm-1
 ==================================================''')
