@@ -105,23 +105,19 @@ def make_animation(cells, timestep, duration, animation_timestep, gridsize, slow
     animation.save('Part2BOutput.mp4')
 
 
-def run():
-    inp = input('Part A or B:')
-    if inp.upper() == 'A':
-        duration = float(input('Duration of simulation: '))
-        timestep = 1e-6
+def run_ex3p2a() -> None:
+    duration = 90
+    timestep = 1e-6
 
-        # PART A
-        cell = Cell(0, duration, timestep, True, 1)
-        for i in tqdm(range(int(duration / timestep) - 1)):
-            cell.reactions(i)
-        plot_graph(cell.time, cell.x_array, cell.y_array, cell.z_array, 0)
-        plt.show()
-    else:
-        run_b()
+    # PART A
+    cell = Cell(0, duration, timestep, True, 1)
+    for i in tqdm(range(int(duration / timestep) - 1)):
+        cell.reactions(i)
+    plot_graph(cell.time, cell.x_array, cell.y_array, cell.z_array, 0)
+    plt.show()
 
 
-def run_b():
+def run_ex3p2b() -> None:
     duration = 2.5
     timestep = 1e-6
     animation_timestep = 0.001
@@ -152,4 +148,9 @@ def run_b():
 
 
 if __name__ == '__main__':
-    run()
+
+    inp = input('Part A or B:')
+    if inp.upper() == 'A':
+        run_ex3p2a()
+    else:
+        run_ex3p2b()
