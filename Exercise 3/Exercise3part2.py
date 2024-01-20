@@ -106,6 +106,11 @@ def make_animation(cells, timestep, duration, animation_timestep, gridsize, slow
 
 
 def run_ex3p2a() -> None:
+    """
+    Run Experiment 3 Part 2 A (Oreganator - recreating fig 3.4)
+    :return: None
+    """
+
     duration = 90
     timestep = 1e-6
 
@@ -118,6 +123,11 @@ def run_ex3p2a() -> None:
 
 
 def run_ex3p2b() -> None:
+    """
+    Run Experiment 3 Part 2 B (Oreganator with Diffusion)
+    :return: None
+    """
+
     duration = 2.5
     timestep = 1e-6
     animation_timestep = 0.001

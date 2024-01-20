@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 
 
 def run_ex3p1() -> None:
+    """
+    Computes the graph of the protein folding dependence on Urea conc.
+    :return: None
+    """
     urea = np.arange(0, 8, 0.01)
 
     kf15 = 26000*np.exp(-1.68*urea)

@@ -163,7 +163,7 @@ def parse_species(species):
     return species
 
 
-def run():
+def run_ex3gc():
     """Run the program"""
 
     reactions, start_conditions, duration, timestep, all_unique_species,  to_plot, log = parse_input_file('input.txt')
@@ -177,4 +177,4 @@ def run():
 
 
 if __name__ == '__main__':
-    run()
+    run_ex3gc()
