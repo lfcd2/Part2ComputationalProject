@@ -1,5 +1,7 @@
-Note: Exercise 3 has multiple parts
+#### Note: Exercise 3 has multiple parts
 - Part 1 is the reaction that depends on [Urea]
-- Part 2 (A) is the oregonator reaction
-- Part 2 (B) is the 3D spatial animation (its quite slow but an output is shown)
-- General Case is the same as Part 2 (A) but takes an input from the text file
+- Part 2.1 is the oregonator reaction
+- Part 2.2 is the 3D spatial animation (its quite slow but an output is shown)
+- General Case is the same as Part 2.1 but takes an input from the text file (input.txt) in the same folder
+#### Run Exercise3main.py to select which part to run.
+- Part 2.2 takes a fair while to run, so Part2BOutput.mp4 is provided as an example output. 
