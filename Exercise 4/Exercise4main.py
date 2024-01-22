@@ -3,41 +3,53 @@ import os
 import math
 
 
-DELTA = 1e-11
-LAMBDA = 1e-3
-
-
 class Vec3d:
     def __init__(self, pos=(0, 0, 0)):
+        """
+        A 3D vector
+        :param list[float] pos: position of the vector
+        """
+
         self.r = list(pos)
 
     def __sub__(self, other):
+        """Subtracting the vectors"""
         ret = Vec3d()
         for i in range(3):
             ret.r[i] = self.r[i] - other.r[i]
         return ret
 
     def __add__(self, other):
+        """Adding the vectors"""
         ret = Vec3d()
         for i in range(3):
             ret.r[i] = self.r[i] + other.r[i]
         return ret
 
     def length(self):
+        """Calculating the length of the vectors without a power (**)"""
         return math.sqrt(self.r[0]*self.r[0] + self.r[1]*self.r[1] + self.r[2]*self.r[2])
 
     def distance(self, other):
+        """Calculates the length between two 3d vectors"""
         return (self - other).length()
 
     def location(self):
+        """Function that allows the coordinates of the vector to be called"""
         return self.r
 
     def update_index(self, i, new):
+        """Update an index of the vector"""
         self.r[i] = new
 
 
 class System:
     def __init__(self, positions, re):
+        """
+        A collection of positions that summarises the system, with functions that allow optimisation to be carried out
+        :param list[Vec3d] positions: positions of nuclei
+        :param float re: equilibrium bond length
+        """
         self.positions = positions.copy()
         self.offset_positions_positive = positions.copy()
         self.offset_positions_negative = positions.copy()
@@ -46,9 +58,11 @@ class System:
         self.re = re
 
     def potential(self, r):
+        """Potential, replaced by LJ or Morse in start()"""
         return r
 
     def energy(self, positions):
+        """Energy of the positions inputted"""
         U = 0
         for i, pos1 in enumerate(positions):
             for j, pos2 in enumerate(positions[i+1:]):
@@ -57,9 +71,20 @@ class System:
         return U
 
     def location(self, i):
+        """Location of the ith atom"""
         return self.positions[i].r
 
     def iteration_cycle(self):
+        """
+        Improves the positions of the nuclei by iterating through pairs of nuclei and calculating the change in energy
+        for a small displacement. If it improves, it moves the molecule that direction, if not it moves it the other
+        direction.
+        Also records the largest change and the total change to determine if equilibrium is reached.
+        :return: sum_change, largest_change
+        """
+
+        DELTA = 1e-11
+        LAMBDA = 1e-3
         sum_change = 0
         largest_change = 0
         for particle_index, position in enumerate(self.positions):
@@ -92,15 +117,22 @@ class System:
 
 class LJSystem(System):
     def potential(self, r):
+        """Lenard Jones potential"""
         return 4 * ((r ** -12) - (r ** -6))
 
 
 class MorseSystem(System):
     def potential(self, r):
+        """Morse potential"""
         return (1 - np.exp(-r + self.re)) ** 2
 
 
-def start():
+def start() -> tuple[System, int, str, float]:
+    """
+    Requests the user to input a potential type and value of σ, then returns a relevant instance of System
+    :return: reaction_system, num_of_nuclei, potential_type, re
+    """
+
     start_positions, num_of_nuclei = load_positions_from_xyz('input.xyz')
 
     potential_type = '0'
@@ -123,6 +155,12 @@ def start():
 
 
 def load_positions_from_xyz(filename):
+    """
+    Converts the input.xyz file into a list of positions
+    :param str filename: location of file
+    :return positions, num_of_nuclei:
+    """
+
     try:
         with open(filename, 'r') as f:
             raw_data = f.readlines()
@@ -141,7 +179,12 @@ def load_positions_from_xyz(filename):
     return positions, num_of_nuclei
 
 
-def converge(system):
+def converge(system) -> System:
+    """
+    Repeats the optimisation step system.iteration_cycle until there is little change in bond lengths
+    :param System system:
+    :return System system:
+    """
 
     total_change, indi_change, iter_count = 1, 1, 0
     while abs(total_change) > 1e-9 or abs(indi_change) > 1e-8:
@@ -153,7 +196,13 @@ def converge(system):
     return system
 
 
-def save_output(positions):
+def save_output(positions) -> None:
+    """
+    Saves the results to a .xyz file
+    :param array_like positions: positions of atoms
+    :return: None
+    """
+
     with open('output.xyz', 'w') as f:
         f.write('7\nOutput\n')
         for pos in positions:
@@ -164,7 +213,14 @@ def save_output(positions):
             f.write('\n')
 
 
-def finish(reaction_system, num_of_nuclei, potential_type):
+def finish(reaction_system, num_of_nuclei, potential_type) -> None:
+    """
+    Outputs final results of optimisation in terminal
+    :param System reaction_system: system containing nuclei
+    :param int num_of_nuclei: the number of nuclei in the system
+    :param str potential_type: which potential is being used
+    :return: None
+    """
 
     energy_unit = 'ε' if (potential_type == 'lj') else 'De'
     print(f'Final Energy = {reaction_system.energy(reaction_system.positions)} {energy_unit}')
@@ -179,7 +235,13 @@ def finish(reaction_system, num_of_nuclei, potential_type):
     save_output(reaction_system.positions)
 
 
-def run():
+def run() -> None:
+    """
+    Runs optimisation on the nuclei
+    Clears the terminal between each run
+    :return: None
+    """
+
     clear = 'cls' if os.name == 'nt' else 'clear'
 
     reaction_system, num_of_nuclei, potential_type, re = start()
