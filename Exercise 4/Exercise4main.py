@@ -155,7 +155,7 @@ def converge(system):
 
 def save_output(positions):
     with open('output.xyz', 'w') as f:
-        f.write('7\ntest\n')
+        f.write('7\nOutput\n')
         for pos in positions:
             f.write('C ')
             for a in pos.location():
@@ -195,5 +195,3 @@ def run():
 
 if __name__ == '__main__':
     run()
-
-
