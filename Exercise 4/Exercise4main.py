@@ -77,9 +77,8 @@ class System:
     def iteration_cycle(self):
         """
         Improves the positions of the nuclei by iterating through pairs of nuclei and calculating the change in energy
-        for a small displacement. If it improves, it moves the molecule that direction, if not it moves it the other
-        direction.
-        Also records the largest change and the total change to determine if equilibrium is reached.
+        for a small displacement. Then shifts the nuclei in the direction minimising energy.
+        Also records the largest change and the total change to later determine if equilibrium is reached.
         :return: sum_change, largest_change
         """
 
