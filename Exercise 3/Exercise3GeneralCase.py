@@ -14,7 +14,7 @@ class Reaction:
 
         self.rate = float(rate)
 
-        reagents, products = species_string.split('>')
+        reagents, products = species_string.split('->')
         reagents = parse_species(reagents)
         self.reagents = {x: reagents.count(x) for x in reagents}
         products = parse_species(products)
@@ -89,6 +89,7 @@ def plot_graph(time, state_dict, to_plot, log):
     ax.set_ylabel('Concentration / M')
     if log:
         ax.set_yscale('log')
+    plt.savefig('Part3Output.png', dpi=300)
     plt.show()
 
 
@@ -111,7 +112,7 @@ def parse_input_file(input_file):
                 pass
             elif '/' in line:
                 reaction_species, reaction_rate = line.split('/')
-                if '>' not in reaction_species:
+                if '->' not in reaction_species:
                     raise Exception('Invalid Reaction')
                 try:
                     reaction_rate = float(reaction_rate)
