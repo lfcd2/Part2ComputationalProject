@@ -159,7 +159,14 @@ def load_positions_from_xyz(filename):
     :param str filename: location of file
     :return positions, num_of_nuclei:
     """
-
+    file_or_num = input('Load specific start positions from file? Y/N: ')
+    if file_or_num != 'Y':
+        num_of_nuclei = int(input('Number of nuclei (int): '))
+        positions = []
+        for i in range(num_of_nuclei):
+            positions.append(Vec3d(2*np.random.rand(3)))
+        return positions, num_of_nuclei
+    
     try:
         with open(filename, 'r') as f:
             raw_data = f.readlines()
@@ -195,7 +202,7 @@ def converge(system) -> System:
     return system
 
 
-def save_output(positions) -> None:
+def save_output(positions, num_of_nuclei) -> None:
     """
     Saves the results to a .xyz file
     :param array_like positions: positions of atoms
@@ -203,7 +210,7 @@ def save_output(positions) -> None:
     """
 
     with open('output.xyz', 'w') as f:
-        f.write('7\nOutput\n')
+        f.write(f'{num_of_nuclei}\nOutput\n')
         for pos in positions:
             f.write('C ')
             for a in pos.location():
@@ -231,7 +238,7 @@ def finish(reaction_system, num_of_nuclei, potential_type) -> None:
             distance = position1.distance(position2)
             print(f'Atom A: {i}, Atom B: {j}, Distance: {round(distance, 3)}σ')
 
-    save_output(reaction_system.positions)
+    save_output(reaction_system.positions, num_of_nuclei)
 
 
 def run() -> None:
